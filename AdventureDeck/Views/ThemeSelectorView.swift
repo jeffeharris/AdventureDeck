@@ -45,8 +45,6 @@ struct ThemeButton: View {
     let theme: Theme
     let action: () -> Void
 
-    @State private var isPressed = false
-
     var body: some View {
         Button(action: action) {
             VStack(spacing: 16) {
@@ -72,22 +70,24 @@ struct ThemeButton: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .shadow(color: theme.primaryColor.opacity(0.5), radius: isPressed ? 5 : 15)
+                    .shadow(color: theme.primaryColor.opacity(0.5), radius: 15)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 30)
                     .stroke(theme.accentColor.opacity(0.5), lineWidth: 3)
             )
-            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(ScaleButtonStyle())
         .accessibilityLabel("\(theme.rawValue) adventure")
         .accessibilityHint("Double tap to start a \(theme.rawValue.lowercased()) themed adventure")
-        .onLongPressGesture(minimumDuration: .infinity, pressing: { pressing in
-            withAnimation(.easeInOut(duration: 0.15)) {
-                isPressed = pressing
-            }
-        }, perform: {})
+    }
+}
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
     }
 }
 
