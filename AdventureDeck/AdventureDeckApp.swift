@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct AdventureMissionControlApp: App {
+struct AdventureDeckApp: App {
     @State private var viewModel = AdventureViewModel()
 
     var body: some Scene {
