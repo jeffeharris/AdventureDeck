@@ -19,6 +19,13 @@
 		A1000010 /* MapGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010; };
 		A1000011 /* AdventureViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011; };
 		A1000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000012; };
+		A1000013 /* TerrainZone.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000013; };
+		A1000014 /* Discovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000014; };
+		A1000015 /* Mission.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015; };
+		A1000016 /* DiscoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016; };
+		A1000017 /* ScannerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017; };
+		A1000018 /* MissionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018; };
+		A1000019 /* ARScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +41,14 @@
 		A2000010 /* MapGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapGenerator.swift; sourceTree = "<group>"; };
 		A2000011 /* AdventureViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureViewModel.swift; sourceTree = "<group>"; };
 		A2000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000013 /* TerrainZone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerrainZone.swift; sourceTree = "<group>"; };
+		A2000014 /* Discovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Discovery.swift; sourceTree = "<group>"; };
+		A2000015 /* Mission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mission.swift; sourceTree = "<group>"; };
+		A2000016 /* DiscoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscoveryManager.swift; sourceTree = "<group>"; };
+		A2000017 /* ScannerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerOverlay.swift; sourceTree = "<group>"; };
+		A2000018 /* MissionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionViews.swift; sourceTree = "<group>"; };
+		A2000019 /* ARScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARScannerView.swift; sourceTree = "<group>"; };
+		A2000020 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A3000001 /* AdventureDeck.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AdventureDeck.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -61,6 +76,7 @@
 			children = (
 				A2000001 /* AdventureDeckApp.swift */,
 				A2000011 /* AdventureViewModel.swift */,
+				A2000020 /* Info.plist */,
 				A5000004 /* Views */,
 				A5000005 /* Models */,
 				A5000006 /* Managers */,
@@ -84,6 +100,9 @@
 				A2000003 /* ThemeSelectorView.swift */,
 				A2000004 /* MapView.swift */,
 				A2000005 /* SoundBoardView.swift */,
+				A5000008 /* Scanner */,
+				A5000009 /* Missions */,
+				A5000010 /* AR */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -94,6 +113,9 @@
 				A2000006 /* Theme.swift */,
 				A2000007 /* AdventureMap.swift */,
 				A2000008 /* AdventureEvent.swift */,
+				A2000013 /* TerrainZone.swift */,
+				A2000014 /* Discovery.swift */,
+				A2000015 /* Mission.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -103,6 +125,7 @@
 			children = (
 				A2000009 /* AudioManager.swift */,
 				A2000010 /* MapGenerator.swift */,
+				A2000016 /* DiscoveryManager.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -113,6 +136,30 @@
 				A2000012 /* Assets.xcassets */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		A5000008 /* Scanner */ = {
+			isa = PBXGroup;
+			children = (
+				A2000017 /* ScannerOverlay.swift */,
+			);
+			path = Scanner;
+			sourceTree = "<group>";
+		};
+		A5000009 /* Missions */ = {
+			isa = PBXGroup;
+			children = (
+				A2000018 /* MissionViews.swift */,
+			);
+			path = Missions;
+			sourceTree = "<group>";
+		};
+		A5000010 /* AR */ = {
+			isa = PBXGroup;
+			children = (
+				A2000019 /* ARScannerView.swift */,
+			);
+			path = AR;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -195,6 +242,13 @@
 				A1000009 /* AudioManager.swift in Sources */,
 				A1000010 /* MapGenerator.swift in Sources */,
 				A1000011 /* AdventureViewModel.swift in Sources */,
+				A1000013 /* TerrainZone.swift in Sources */,
+				A1000014 /* Discovery.swift in Sources */,
+				A1000015 /* Mission.swift in Sources */,
+				A1000016 /* DiscoveryManager.swift in Sources */,
+				A1000017 /* ScannerOverlay.swift in Sources */,
+				A1000018 /* MissionViews.swift in Sources */,
+				A1000019 /* ARScannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,7 +384,8 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Adventure Mission Control";
+				INFOPLIST_FILE = AdventureDeck/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Adventure Deck";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -361,7 +416,8 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Adventure Mission Control";
+				INFOPLIST_FILE = AdventureDeck/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Adventure Deck";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
