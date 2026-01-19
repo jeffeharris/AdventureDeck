@@ -32,15 +32,27 @@ class AdventureViewModel {
     // Events
     var activeEvents: [AdventureEvent] = []
 
+    // Scanner state
+    var scannerState: ScannerState = .idle
+
+    // Mission state (passive/ambient - missions drift in and fade away)
+    var missionState: MissionState = .none
+    var completedMissions: [Mission] = []
+    private var missionAppearTime: Date?
+    private let missionDisplayDuration: TimeInterval = 30 // Seconds before mission fades away
+
     // MARK: - Managers
 
     let audioManager = AudioManager()
     let mapGenerator = MapGenerator()
+    let discoveryManager = DiscoveryManager()
 
     // MARK: - Private
 
     private var travelTimer: Timer?
     private var eventTimer: Timer?
+    private var missionTimer: Timer?
+    private var missionFadeTimer: Timer?
 
     // MARK: - Computed
 
@@ -109,6 +121,7 @@ class AdventureViewModel {
         state = .traveling
         startTravelTimer()
         startEventTimer()
+        startMissionSystem()
     }
 
     func pauseAdventure() {
@@ -128,6 +141,7 @@ class AdventureViewModel {
     func stopAdventure() {
         state = .ready
         stopTimers()
+        stopMissionSystem()
         resetAdventure()
     }
 
@@ -218,6 +232,15 @@ class AdventureViewModel {
             // Mark node as visited
             self.map?.markNodeVisited(nextNodeId)
 
+            // Update mission progress for travel/node missions
+            updateMissionProgress(for: .travel)
+            updateMissionProgress(for: .reachNode(currentPathIndex))
+
+            // Check if we entered a new zone
+            if let zone = map.terrainZones.first(where: { $0.bounds.contains(nextNode.position) }) {
+                updateMissionProgress(for: .visitZone(zone.terrainType.name))
+            }
+
             // Play a subtle sound
             if let theme = selectedTheme {
                 audioManager.playEffect(named: theme.actionSounds.randomElement() ?? "beep")
@@ -275,5 +298,135 @@ class AdventureViewModel {
         guard let theme = selectedTheme,
               index < theme.actionSounds.count else { return }
         audioManager.playEffect(named: theme.actionSounds[index])
+    }
+
+    // MARK: - Scanner
+
+    func scanItem(at position: CGPoint, type: ScannableType, icon: String, zoneName: String? = nil) {
+        guard let theme = selectedTheme else { return }
+        guard scannerState == .idle else { return }
+
+        scannerState = .scanning(position: position)
+
+        // After scanning animation completes, generate discovery
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self = self else { return }
+
+            let discovery = self.discoveryManager.generateDiscovery(
+                for: theme,
+                scannableType: type,
+                icon: icon,
+                zoneName: zoneName
+            )
+
+            self.discoveryManager.addDiscovery(discovery)
+            self.scannerState = .showingResult(discovery: discovery)
+
+            // Update mission progress if scanning mission active
+            self.updateMissionProgress(for: .scan)
+        }
+    }
+
+    func dismissDiscovery() {
+        scannerState = .idle
+    }
+
+    // MARK: - Missions (Passive/Ambient)
+
+    func startMissionSystem() {
+        // Schedule first mission after a delay
+        scheduleMissionAppearance(delay: Double.random(in: 15...30))
+    }
+
+    func stopMissionSystem() {
+        missionTimer?.invalidate()
+        missionTimer = nil
+        missionFadeTimer?.invalidate()
+        missionFadeTimer = nil
+        missionState = .none
+    }
+
+    private func scheduleMissionAppearance(delay: TimeInterval) {
+        missionTimer?.invalidate()
+        missionTimer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
+            self?.showNewMission()
+        }
+    }
+
+    private func showNewMission() {
+        guard let theme = selectedTheme, let map = map else { return }
+
+        // Only show new mission if none is currently showing
+        guard case .none = missionState else {
+            scheduleMissionAppearance(delay: Double.random(in: 20...40))
+            return
+        }
+
+        let mission = MissionGenerator.generate(for: theme, map: map, currentNodeIndex: currentPathIndex)
+        missionState = .available(mission: mission)
+        missionAppearTime = Date()
+
+        // Schedule auto-fade if not accepted
+        missionFadeTimer?.invalidate()
+        missionFadeTimer = Timer.scheduledTimer(withTimeInterval: missionDisplayDuration, repeats: false) { [weak self] _ in
+            self?.fadeMissionAway()
+        }
+    }
+
+    private func fadeMissionAway() {
+        guard case .available = missionState else { return }
+
+        // Mission was not accepted, fade it away silently
+        missionState = .none
+
+        // Schedule next mission
+        scheduleMissionAppearance(delay: Double.random(in: 30...60))
+    }
+
+    func acceptMission() {
+        guard case .available(var mission) = missionState else { return }
+
+        missionFadeTimer?.invalidate()
+        missionFadeTimer = nil
+
+        mission.isAccepted = true
+        missionState = .active(mission: mission)
+    }
+
+    func updateMissionProgress(for action: MissionAction) {
+        guard case .active(var mission) = missionState else { return }
+
+        switch (mission.type, action) {
+        case (.scanItems, .scan):
+            mission.progress += 1
+        case (.travelDistance, .travel):
+            mission.progress += 1
+        case (.visitZone(let targetZone), .visitZone(let visitedZone)) where targetZone == visitedZone:
+            mission.progress = mission.target
+        case (.reachNode(let targetIndex), .reachNode(let reachedIndex)) where targetIndex <= reachedIndex:
+            mission.progress = mission.target
+        default:
+            return
+        }
+
+        if mission.isComplete {
+            missionState = .celebrating(mission: mission)
+            completedMissions.append(mission)
+        } else {
+            missionState = .active(mission: mission)
+        }
+    }
+
+    func dismissMissionCelebration() {
+        missionState = .none
+        // Schedule next mission
+        scheduleMissionAppearance(delay: Double.random(in: 20...40))
+    }
+
+    enum MissionAction {
+        case scan
+        case travel
+        case visitZone(String)
+        case reachNode(Int)
     }
 }

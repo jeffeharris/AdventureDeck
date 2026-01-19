@@ -25,31 +25,46 @@ struct MainView: View {
 
 struct AdventureView: View {
     @Environment(AdventureViewModel.self) private var viewModel
+    @State private var showARScanner = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Top bar with back button and theme indicator
-            TopBarView()
+        ZStack {
+            VStack(spacing: 0) {
+                // Top bar with back button and theme indicator
+                TopBarView(showARScanner: $showARScanner)
 
-            // Main content area
-            HStack(spacing: 0) {
-                // Map takes most of the space
-                MapView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Main content area
+                HStack(spacing: 0) {
+                    // Map takes most of the space
+                    MapView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Sound board on the right
-                SoundBoardView()
-                    .frame(width: 160)
+                    // Sound board on the right
+                    SoundBoardView()
+                        .frame(width: 160)
+                }
+
+                // Bottom control bar
+                ControlBarView()
             }
 
-            // Bottom control bar
-            ControlBarView()
+            // AR Scanner full-screen overlay
+            if showARScanner, let theme = viewModel.selectedTheme {
+                ARScannerView(theme: theme) {
+                    withAnimation {
+                        showARScanner = false
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
+        .animation(.easeInOut(duration: 0.3), value: showARScanner)
     }
 }
 
 struct TopBarView: View {
     @Environment(AdventureViewModel.self) private var viewModel
+    @Binding var showARScanner: Bool
 
     var body: some View {
         HStack {
@@ -83,6 +98,22 @@ struct TopBarView: View {
             }
 
             Spacer()
+
+            // AR Scanner button (big and kid-friendly)
+            Button {
+                showARScanner = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "camera.viewfinder")
+                    Text("Scan")
+                }
+                .themedCapsuleStyle(
+                    accent: viewModel.currentThemeColors.accent,
+                    secondary: viewModel.currentThemeColors.secondary
+                )
+            }
+            .accessibilityLabel("Open camera scanner")
+            .accessibilityHint("Double tap to scan real objects with your camera")
 
             // New map button
             Button {

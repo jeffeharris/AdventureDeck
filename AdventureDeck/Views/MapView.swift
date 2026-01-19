@@ -15,18 +15,24 @@ struct MapView: View {
                         viewModel.setMapSize(newSize)
                     }
 
-                if let map = viewModel.map {
-                    // Draw terrain zones (background)
-                    TerrainZonesLayer(zones: map.terrainZones)
+                if let map = viewModel.map, let theme = viewModel.selectedTheme {
+                    // Draw terrain zones (background) - tappable for scanning
+                    TerrainZonesLayer(zones: map.terrainZones, onTapZone: { zone, position in
+                        viewModel.scanItem(at: position, type: .zone, icon: zone.terrainType.icon, zoneName: zone.terrainType.name)
+                    })
 
                     // Draw paths
                     PathsLayer(map: map)
 
-                    // Draw decorations (on top of zones, under paths)
-                    TerrainDecorationsLayer(zones: map.terrainZones)
+                    // Draw decorations (on top of zones, under paths) - tappable for scanning
+                    TerrainDecorationsLayer(zones: map.terrainZones, onTapDecoration: { decoration, position in
+                        viewModel.scanItem(at: position, type: .decoration, icon: decoration.icon)
+                    })
 
-                    // Draw nodes
-                    NodesLayer(map: map)
+                    // Draw nodes - tappable for scanning
+                    NodesLayer(map: map, onTapNode: { node in
+                        viewModel.scanItem(at: node.position, type: .node, icon: node.icon)
+                    })
 
                     // Draw events
                     EventsLayer(events: viewModel.activeEvents)
@@ -34,10 +40,61 @@ struct MapView: View {
                     // Draw sprite on top
                     SpriteView(
                         position: viewModel.spritePosition,
-                        icon: viewModel.selectedTheme?.spriteIcon ?? "airplane",
+                        icon: theme.spriteIcon,
                         color: viewModel.currentThemeColors.accent,
                         isMoving: viewModel.isPlaying
                     )
+
+                    // Scanner overlay
+                    if case .scanning(let position) = viewModel.scannerState {
+                        ScannerOverlay(position: position, theme: theme) {
+                            // Animation complete - handled in ViewModel
+                        }
+                    }
+
+                    // Discovery result card
+                    if case .showingResult(let discovery) = viewModel.scannerState {
+                        DiscoveryCardView(discovery: discovery, theme: theme) {
+                            viewModel.dismissDiscovery()
+                        }
+                    }
+
+                    // Mission alert (floating, passive)
+                    if case .available(let mission) = viewModel.missionState {
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                MissionAlertView(mission: mission, theme: theme) {
+                                    viewModel.acceptMission()
+                                }
+                                .padding(20)
+                            }
+                        }
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                    }
+
+                    // Active mission progress
+                    if case .active(let mission) = viewModel.missionState {
+                        VStack {
+                            HStack {
+                                MissionProgressView(mission: mission, theme: theme)
+                                    .padding(16)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    // Mission celebration
+                    if case .celebrating(let mission) = viewModel.missionState {
+                        MissionCelebrationView(mission: mission, theme: theme) {
+                            viewModel.dismissMissionCelebration()
+                        }
+                    }
                 } else {
                     // Loading state
                     ProgressView()
@@ -54,33 +111,59 @@ struct MapView: View {
 
 struct TerrainZonesLayer: View {
     let zones: [TerrainZone]
+    var onTapZone: ((TerrainZone, CGPoint) -> Void)?
 
     var body: some View {
-        Canvas { context, size in
-            for zone in zones {
-                // Draw zone background with gradient
-                let rect = zone.bounds
+        ZStack {
+            // Canvas for zone backgrounds
+            Canvas { context, size in
+                for zone in zones {
+                    // Draw zone background with gradient
+                    let rect = zone.bounds
 
-                // Create a subtle gradient for each zone
-                let gradient = Gradient(colors: [
-                    zone.terrainType.primaryColor,
-                    zone.terrainType.secondaryColor
-                ])
+                    // Create a subtle gradient for each zone
+                    let gradient = Gradient(colors: [
+                        zone.terrainType.primaryColor,
+                        zone.terrainType.secondaryColor
+                    ])
 
-                // Draw the zone rectangle with gradient fill
-                let path = Path(roundedRect: rect, cornerRadius: 0)
-                context.fill(path, with: .linearGradient(
-                    gradient,
-                    startPoint: CGPoint(x: rect.minX, y: rect.minY),
-                    endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
-                ))
+                    // Draw the zone rectangle with gradient fill
+                    let path = Path(roundedRect: rect, cornerRadius: 0)
+                    context.fill(path, with: .linearGradient(
+                        gradient,
+                        startPoint: CGPoint(x: rect.minX, y: rect.minY),
+                        endPoint: CGPoint(x: rect.maxX, y: rect.maxY)
+                    ))
 
-                // Add soft border between zones
-                context.stroke(
-                    Path(rect),
-                    with: .color(.black.opacity(0.1)),
-                    lineWidth: 1
-                )
+                    // Add soft border between zones
+                    context.stroke(
+                        Path(rect),
+                        with: .color(.black.opacity(0.1)),
+                        lineWidth: 1
+                    )
+                }
+            }
+
+            // Invisible tap areas for each zone
+            ForEach(zones) { zone in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .frame(width: zone.bounds.width, height: zone.bounds.height)
+                    .position(
+                        x: zone.bounds.midX,
+                        y: zone.bounds.midY
+                    )
+                    .onTapGesture { location in
+                        // Convert local tap coordinates to absolute position in the zone
+                        let tapPoint = CGPoint(
+                            x: zone.bounds.minX + (location.x / zone.bounds.width) * zone.bounds.width,
+                            y: zone.bounds.minY + (location.y / zone.bounds.height) * zone.bounds.height
+                        )
+                        onTapZone?(zone, tapPoint)
+                    }
+                    .accessibilityLabel("Scan \(zone.terrainType.name) zone")
+                    .accessibilityHint("Double tap to scan this area")
             }
         }
     }
@@ -88,6 +171,7 @@ struct TerrainZonesLayer: View {
 
 struct TerrainDecorationsLayer: View {
     let zones: [TerrainZone]
+    var onTapDecoration: ((TerrainDecoration, CGPoint) -> Void)?
 
     var body: some View {
         ForEach(zones) { zone in
@@ -98,6 +182,13 @@ struct TerrainDecorationsLayer: View {
                     .opacity(decoration.opacity)
                     .rotationEffect(.degrees(decoration.rotation))
                     .position(decoration.position)
+                    .frame(width: decoration.size + 20, height: decoration.size + 20)
+                    .contentShape(Circle())
+                    .onTapGesture {
+                        onTapDecoration?(decoration, decoration.position)
+                    }
+                    .accessibilityLabel("Scan decoration")
+                    .accessibilityHint("Double tap to scan this object")
             }
         }
     }
@@ -150,6 +241,7 @@ struct PathsLayer: View {
 
 struct NodesLayer: View {
     let map: AdventureMap
+    var onTapNode: ((MapNode) -> Void)?
 
     var body: some View {
         ForEach(map.nodes) { node in
@@ -159,6 +251,12 @@ struct NodesLayer: View {
                 isOnPath: map.traversalPath.contains(node.id)
             )
             .position(node.position)
+            .contentShape(Circle().size(width: 60, height: 60))
+            .onTapGesture {
+                onTapNode?(node)
+            }
+            .accessibilityLabel("Scan waypoint")
+            .accessibilityHint("Double tap to scan this waypoint")
         }
     }
 }

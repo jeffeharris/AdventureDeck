@@ -274,6 +274,11 @@ struct TerrainType: Identifiable {
     let secondaryColor: Color
     let decorationIcons: [String]
     let decorationDensity: Double // 0.0 to 1.0, how many decorations to show
+
+    // Primary icon for this terrain type (first decoration icon)
+    var icon: String {
+        decorationIcons.first ?? "circle.fill"
+    }
 }
 
 // MARK: - Color Extension
